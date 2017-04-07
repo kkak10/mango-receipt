@@ -9,6 +9,7 @@ import moment from 'moment';
 
 import Constants from '../constants'
 import { dateRegExp, priceRegExp } from '../utils/reg'
+import { minImageNameGenerator } from '../utils/utils'
 
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
@@ -24,46 +25,66 @@ const storage = multer.diskStorage({
 
 const uploads = multer({storage});
 
+
 export default ({config, db}) => resource({
   middleware: [
     uploads.single('receiptImg')
   ],
 
   create({body, file}, res) {
-    const receiptImageUrl = `http://172.30.25.194:8080${Constants.RECEIFT_IMAGE_PATH}/${file.filename}`;
-    const scriptPath = 'static/scripts/imageProcessing.py';
+    const receiptImageUrl = `${config.API_HOST_URL}${Constants.RECEIFT_IMAGE_PATH}/${file.filename}`;
     const imagePath = path.resolve(__dirname, `../../${file.path}`);
-    const shellOptions = {args: [imagePath]};
+    const minImageName = minImageNameGenerator(file.path, file.filename);
+    const minImagePath = `${config.API_HOST_URL}/${minImageName}`;
+    const shellOptions = {args: [imagePath, minImageName]};
+    const receiptImageProcessingPromise = new Promise((resolve, reject) => {
+      pythonShell.run(Constants.IMAGE_PROCESSING_SCRIPT_PATH, shellOptions, (err, result) => {
+        if (err) {
+          reject(err);
+          return;
+        }
 
-    pythonShell.run(scriptPath, shellOptions, (err, result) => {
-      if (err) {
-        console.log(err);
-        res.status(500).end();
-        return;
-      }
+        resolve(result);
+      });
+    });
 
-      const message = result[0];
-      const price = priceRegExp(message);
-      let date = dateRegExp(message);
-      let weekNumber;
+    receiptImageProcessingPromise
+      .then(result => {
+        const message = result[0];
+        const price = priceRegExp(message);
+        let date = dateRegExp(message);
+        let weekNumber = null;
 
-      if (date) {
         try {
           const momentDate = moment(date);
           weekNumber = momentDate.isoWeek();
-          date = momentDate.format('YYYY-MM-DD');
+
+          if (Number.isNaN(weekNumber)) {
+            weekNumber = null;
+          }
+
+          date = momentDate.format("YYYY-MM-DD");
+
+          if (date === "Invalid date") {
+            date = null
+          }
         } catch (e) {
-          weekNumber = null;
           date = null;
         }
-      }
 
-      res.json({
-        date,
-        price,
-        weekNumber,
-        receiptImageUrl,
-      });
-    });
+        const response = {
+          date: date,
+          price: price,
+          weekNumber: weekNumber,
+          receiptImageUrl: minImagePath,
+        };
+
+        res.json(response);
+      })
+      .catch(err => {
+        console.log(err);
+        res.status(500).end();
+      })
   }
-});
+})
+;
