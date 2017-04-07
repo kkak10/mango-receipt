@@ -1,5 +1,5 @@
 export function dateRegExp(text) {
-  const dateRegExpList = [/\d{4}-\d{2}-\d{2}/, /\d{4}.\d{2}.\d{2}/, /\d{2}.\d{2}.\d{2}/, /\d{2}-\d{2}-\d{2}/];
+  const dateRegExpList = [/\d{4}-\d{2}-\d{2}/, /\d{4}.\d{2}.\d{2}/];
 
   return commonRegExp(text, dateRegExpList);
 }

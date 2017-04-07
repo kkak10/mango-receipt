@@ -7,7 +7,7 @@ export default ({ config, db }) => {
 
 	// mount the facets resource
 	api.use('/receipt', receipt({ config, db }));
-	
+
 	api.get('/', (req, res) => {
 		res.json({ version });
 	});

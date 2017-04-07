@@ -38,6 +38,7 @@ export default ({config, db}) => resource({
     pythonShell.run(scriptPath, shellOptions, (err, result) => {
       if (err) {
         console.log(err);
+        res.status(500).end();
         return;
       }
 
@@ -47,9 +48,14 @@ export default ({config, db}) => resource({
       let weekNumber;
 
       if (date) {
-        const momentDate = moment(date);
-        weekNumber = momentDate.isoWeek();
-        date = momentDate.format('YYYY-MM-DD');
+        try {
+          const momentDate = moment(date);
+          weekNumber = momentDate.isoWeek();
+          date = momentDate.format('YYYY-MM-DD');
+        } catch (e) {
+          weekNumber = null;
+          date = null;
+        }
       }
 
       res.json({
