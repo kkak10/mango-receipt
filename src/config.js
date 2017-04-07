@@ -1,3 +1,3 @@
 const env = process.env.NODE_ENV || 'development';
 
-export default require(`./config/${env}.json`);
+export default require(`./config/${env.toLocaleLowerCase()}.json`);

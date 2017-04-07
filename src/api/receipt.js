@@ -33,7 +33,6 @@ export default ({config, db}) => resource({
     const receiptImageUrl = `http://172.30.25.194:8080${Constants.RECEIFT_IMAGE_PATH}/${file.filename}`;
     const scriptPath = 'static/scripts/imageProcessing.py';
     const imagePath = path.resolve(__dirname, `../../${file.path}`);
-
     const shellOptions = {args: [imagePath]};
 
     pythonShell.run(scriptPath, shellOptions, (err, result) => {
@@ -43,12 +42,14 @@ export default ({config, db}) => resource({
       }
 
       const message = result[0];
-      const date = dateRegExp(message);
       const price = priceRegExp(message);
+      let date = dateRegExp(message);
       let weekNumber;
 
       if (date) {
-        weekNumber = moment(date).isoWeek();
+        const momentDate = moment(date);
+        weekNumber = momentDate.isoWeek();
+        date = momentDate.format('YYYY-MM-DD');
       }
 
       res.json({
@@ -56,7 +57,7 @@ export default ({config, db}) => resource({
         price,
         weekNumber,
         receiptImageUrl,
-      })
+      });
     });
   }
 });
