@@ -1,0 +1,8 @@
+{
+  "API_HOST_URL": "http://172.30.25.194:8080",
+  "port": 8080,
+  "bodyLimit": "100kb",
+  "corsHeaders": [
+    "Link"
+  ]
+}
